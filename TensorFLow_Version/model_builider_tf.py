@@ -28,11 +28,9 @@ def TransLOB(window_size,n_dim):
     i = Input(shape=(window_size, n_dim))
     x = i
     # 5 Dilated Convolution Layers
-    x = tf.keras.layers.Conv1D(256, kernel_size=2, dilation_rate=1, activation='relu', padding='causal')(x)
-    x = tf.keras.layers.Conv1D(128, kernel_size=2, dilation_rate=2, activation='relu', padding='causal')(x)
-    x = tf.keras.layers.Conv1D(64, kernel_size=2, dilation_rate=4, activation='relu', padding='causal')(x)
-    x = tf.keras.layers.Conv1D(32, kernel_size=2, dilation_rate=8, activation='relu', padding='causal')(x)
-    x = tf.keras.layers.Conv1D(14, kernel_size=2, dilation_rate=16, activation='relu', padding='causal')(x)
+    x = tf.keras.layers.Conv1D(64, kernel_size=2, dilation_rate=1, activation='relu', padding='causal')(x)
+    x = tf.keras.layers.Conv1D(32, kernel_size=2, dilation_rate=4, activation='relu', padding='causal')(x)
+    x = tf.keras.layers.Conv1D(16, kernel_size=2, dilation_rate=16, activation='relu', padding='causal')(x)
 
     # Layer Norm
     x = tf.keras.layers.LayerNormalization()(x)
