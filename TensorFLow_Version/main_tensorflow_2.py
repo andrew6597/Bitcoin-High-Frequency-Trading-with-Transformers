@@ -36,8 +36,6 @@ if __name__ == '__main__':
     # Prompt the user for input and store it in a variable
     n_dim = int(input("Please enter n_dim: "))
     print("You entered the int:", n_dim)
-`   df = df.iloc[:,:n_dim]
-    print("Reduced depth to:", n_dim/2)
 
     k = int(input("Please enter k: "))
     print("You entered the int:", k)
