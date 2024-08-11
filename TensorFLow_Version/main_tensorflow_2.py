@@ -64,7 +64,7 @@ if __name__ == '__main__':
     print(df['label'].value_counts())
 
     val_point = int(len(df) * 2 / 3)
-    test_point = val_point + 150000
+    test_point = val_point + 350000
     
     df_train = df[:val_point]
     df_val = df[val_point:test_point]
