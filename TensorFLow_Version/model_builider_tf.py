@@ -38,16 +38,17 @@ def TransLOB(window_size,n_dim):
     x = PositionalEncodingLayer(window_size)(x)
 
     # Transformer Blocks
-    tb1 = TransformerBlock('Block1', 3, True)
+    #tb1 = TransformerBlock('Block1', 3, True)
     tb2 = TransformerBlock('Block2', 3, True)
 
-    x = tb1(x)
+    #x = tb1(x)
     x= tb2(x)
 
     # MLP
     x = tf.keras.layers.Flatten()(x)
-    x = Dense(16, activation='relu', kernel_regularizer='l2', kernel_initializer='glorot_uniform')(x)
-
+    x = Dense(64, activation='relu', kernel_regularizer='l2', kernel_initializer='glorot_uniform')(x)
+    x = Dropout(0.1)(x)
+    x = Dense(32, activation='relu', kernel_regularizer='l2', kernel_initializer='glorot_uniform')(x)
     # Dropout
     x = Dropout(0.1)(x)
 
