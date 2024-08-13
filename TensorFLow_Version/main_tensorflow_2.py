@@ -67,6 +67,7 @@ if __name__ == '__main__':
     test_point = val_point + 350000
     
     df_train = df[:val_point]
+    print('Training labels: ', df_train['label'].value_counts())
     df_val = df[val_point:test_point]
     df_test = df[test_point:]
     
@@ -130,7 +131,7 @@ if __name__ == '__main__':
     print('X_test shape:', X_test.shape, 'y_test shape:', y_test.shape)
 
     #We observed that model only misses class 0 (Downside movement)
-    class_weights = {0: 10.0, 1: 1.0, 2: 1.5} 
+    class_weights = {0: 2.0, 1: 1.0, 2: 1.5} 
     
     # Create and compile the model
     model = TransLOB(window_size, n_dim) 
