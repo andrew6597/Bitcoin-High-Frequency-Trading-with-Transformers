@@ -129,6 +129,9 @@ if __name__ == '__main__':
     y_test = np.array(y_test)
     print('X_test shape:', X_test.shape, 'y_test shape:', y_test.shape)
 
+    #We observed that model only misses class 0 (Downside movement)
+    class_weights = {0: 10.0, 1: 1.0, 2: 1.5} 
+    
     # Create and compile the model
     model = TransLOB(window_size, n_dim) 
     model.compile(
@@ -143,7 +146,7 @@ if __name__ == '__main__':
     )
 
     # Fit the model
-    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val))
+    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), class_weight=class_weights)
 
     # Finally test the model on test data
     predictions = model.predict(X_test)
