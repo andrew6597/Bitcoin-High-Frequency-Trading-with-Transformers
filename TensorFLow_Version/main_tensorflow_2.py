@@ -11,6 +11,11 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import numpy as np
 
+def lr_schedule(epoch, lr):
+    if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
+        lr = lr * 0.5
+    return lr
+
 if __name__ == '__main__':
     print('Started running...')
 
@@ -130,6 +135,14 @@ if __name__ == '__main__':
     y_test = np.array(y_test)
     print('X_test shape:', X_test.shape, 'y_test shape:', y_test.shape)
 
+    # Create a learning rate scheduler
+    def lr_schedule(epoch, lr):
+        if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
+            lr = lr * 0.5
+        return lr
+        
+    lr_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
+    
     #We observed that model only misses class 0 (Downside movement)
     class_weights = {0: 2.0, 1: 1.0, 2: 1.5} 
     
@@ -147,7 +160,7 @@ if __name__ == '__main__':
     )
 
     # Fit the model
-    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), class_weight=class_weights)
+    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), class_weight=class_weights, callbacks=[lr_scheduler])
 
     # Finally test the model on test data
     predictions = model.predict(X_test)
