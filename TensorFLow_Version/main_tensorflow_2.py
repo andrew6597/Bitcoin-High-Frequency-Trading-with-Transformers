@@ -144,7 +144,7 @@ if __name__ == '__main__':
     lr_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
     
     #We observed that model only misses class 0 (Downside movement)
-    class_weights = {0: 2.0, 1: 1.0, 2: 1.5} 
+    #class_weights = {0: 2.0, 1: 1.0, 2: 1.5}  , class_weight=class_weights
     
     # Create and compile the model
     model = TransLOB(window_size, n_dim) 
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     )
 
     # Fit the model
-    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), class_weight=class_weights, callbacks=[lr_scheduler])
+    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), callbacks=[lr_scheduler])
 
     # Finally test the model on test data
     predictions = model.predict(X_test)
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     cm = confusion_matrix(true_classes, predicted_classes)
     print(cm)
 
-    roc_auc = roc_auc_score(true_classes, predictions[:, 1])
+    roc_auc = roc_auc_score(true_classes, predictions[:, 1], multi_class='ovr')
     print(f'ROC AUC Score: {roc_auc:.2f}')
     
     # Save the model
