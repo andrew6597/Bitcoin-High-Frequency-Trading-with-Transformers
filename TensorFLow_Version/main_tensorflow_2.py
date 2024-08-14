@@ -144,7 +144,7 @@ if __name__ == '__main__':
     lr_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
     
     #We observed that model only misses class 0 (Downside movement)
-    #class_weights = {0: 2.0, 1: 1.0, 2: 1.5}  , class_weight=class_weights
+    class_weights = {0: 4.0, 1: 1, 2: 4.0} 
     
     # Create and compile the model
     model = TransLOB(window_size, n_dim) 
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     )
 
     # Fit the model
-    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), callbacks=[lr_scheduler])
+    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), callbacks=[lr_scheduler] , class_weight=class_weights)
 
     # Finally test the model on test data
     predictions = model.predict(X_test)
