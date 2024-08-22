@@ -3,7 +3,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import matplotlib.pyplot as plt
 import seaborn as sn
-from sklearn.metrics import confusion_matrix, roc_auc_score
+from sklearn.metrics import confusion_matrix, roc_auc_score, classification_report
 from data_prep_tf import train_data_pipe, test_data_pipe, z_score
 from model_builider_tf import TransLOB
 import pandas as pd
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Train Data
     X_train = []
     y_train = []
-    for t in range(0,len(df_train) - window_size): 
+    for t in range(0,len(df_train) - window_size, window_size//2): 
         X_train.append(df_train_scaled.iloc[t:t+window_size, :n_dim])
         y_train.append(df_train.loc[t+window_size,'label'])
 
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     # Validation data
     X_val = []
     y_val = []
-    for t in range(0, len(df_val) - window_size):
+    for t in range(0, len(df_val) - window_size, window_size//2):
         X_val.append(df_val_scaled.iloc[t:t + window_size, :n_dim])
         y_val.append(df_val.loc[t + window_size, 'label'])
     
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     # Test data
     X_test = []
     y_test = []
-    for t in range(0, len(df_test) - window_size):
+    for t in range(0, len(df_test) - window_size, window_size//2):
         X_test.append(df_test_scaled.iloc[t:t + window_size, :n_dim])
         y_test.append(df_test.loc[t + window_size, 'label'])
     
@@ -167,16 +167,18 @@ if __name__ == '__main__':
     predicted_classes = np.argmax(predictions, axis=1)
     true_classes = y_test
     
+    print(classification_report(true_classes, predicted_classes, target_names=['Down', 'Neutral', 'Up']))
+    
     # Calculate accuracy
     accuracy = np.mean(predicted_classes == true_classes)
-    print(f'Test Accuracy: {accuracy * 100:.2f}%')
+    print(f'% of times model predicted correct class: {accuracy * 100:.2f}%')
     
     # Generate confusion matrix
     cm = confusion_matrix(true_classes, predicted_classes)
     print(cm)
 
-    roc_auc = roc_auc_score(true_classes, predictions[:, 1], multi_class='ovr')
-    print(f'ROC AUC Score: {roc_auc:.2f}')
+    roc_auc = roc_auc_score(true_classes, predictions, multi_class='ovr')
+    print(f'Multiclass ROC AUC: {roc_auc:.4f}')
     
     # Save the model
     model.save('/content/drive/My Drive/my_model.h5')
