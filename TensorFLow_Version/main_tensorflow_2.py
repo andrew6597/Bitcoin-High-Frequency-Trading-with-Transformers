@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # Train Data
     X_train = []
     y_train = []
-    for t in range(0,len(df_train) - window_size, window_size//2): 
+    for t in range(0,len(df_train) - window_size, 5): 
         X_train.append(df_train_scaled.iloc[t:t+window_size, :n_dim])
         y_train.append(df_train.loc[t+window_size,'label'])
 
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     # Validation data
     X_val = []
     y_val = []
-    for t in range(0, len(df_val) - window_size, window_size//2):
+    for t in range(0, len(df_val) - window_size, 5):
         X_val.append(df_val_scaled.iloc[t:t + window_size, :n_dim])
         y_val.append(df_val.loc[t + window_size, 'label'])
     
@@ -125,7 +125,7 @@ if __name__ == '__main__':
     # Test data
     X_test = []
     y_test = []
-    for t in range(0, len(df_test) - window_size, window_size//2):
+    for t in range(0, len(df_test) - window_size,5):
         X_test.append(df_test_scaled.iloc[t:t + window_size, :n_dim])
         y_test.append(df_test.loc[t + window_size, 'label'])
     
