@@ -108,7 +108,8 @@ if __name__ == '__main__':
     X_train = np.array(X_train).reshape(N,window_size,n_dim)
     y_train = np.array(y_train)
     print('X_train shape:', X_train.shape, 'y_train shape:', y_train.shape)
-
+    print(pd.Series(y_train).value_counts())
+    
     # Validation data
     X_val = []
     y_val = []
@@ -121,7 +122,8 @@ if __name__ == '__main__':
     X_val = np.array(X_val).reshape(N_val, window_size, n_dim)
     y_val = np.array(y_val)
     print('X_val shape:', X_val.shape, 'y_val shape:', y_val.shape)
-    
+    print(pd.Series(y_val).value_counts())
+          
     # Test data
     X_test = []
     y_test = []
@@ -134,7 +136,7 @@ if __name__ == '__main__':
     X_test = np.array(X_test).reshape(N_test, window_size, n_dim)
     y_test = np.array(y_test)
     print('X_test shape:', X_test.shape, 'y_test shape:', y_test.shape)
-
+    print(pd.Series(y_test).value_counts())
     # Create a learning rate scheduler
     def lr_schedule(epoch, lr):
         if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
