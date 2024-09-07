@@ -25,7 +25,7 @@ def count_prices(df,t,k):
     lower_prices_per = lower_prices/k
     neutral_prices_per = 1-higher_prices_per-lower_prices_per
     
-    return np.array([lower_prices_per, neutral_prices_per, higher_prices_per])
+    return [lower_prices_per, neutral_prices_per, higher_prices_per]
 
 def lr_schedule(epoch, lr):
     if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
@@ -50,7 +50,8 @@ if __name__ == '__main__':
         print("No GPU found")
 
     # Load and split df
-    df = pd.read_csv('/content/drive/My Drive/LOBseries_100ms.csv').drop(columns=['Unnamed: 0'])
+    df = pd.read_csv('/content/drive/My Drive/LOBseries_100ms.csv').drop(columns=['Unnamed: 0', 'E'])
+    #df = pd.read_csv('LOBseries_100ms.csv').drop(columns=['Unnamed: 0','E']).iloc[:10000]
     print('Loaded df', df.shape)
 
     # Set params
@@ -76,20 +77,17 @@ if __name__ == '__main__':
     batch_size = int(input("Please enter batch_size: "))
     print("You entered the int:", batch_size)
     
-    true_targets = []    
-    for t in range(0,len(df)):
-        if t < len(df) - k :
-            true_targets.append(count_prices(df, t, k))
-        else:
-            true_targets.append(np.array([0.16, 0.68, 0.16]))
-   
+    model_name = str(input('Please enter the name of the model: '))
+    
+    df['targets']  = [count_prices(df, t, k) if t < len(df) - k else [0.16, 0.68, 0.16] for t in range(len(df))]
+    
+    # Print the target mean of each class 
+    targets_array  = np.array(list(df['targets'])).reshape(-1,3)
 
-    df['targets'] = true_targets
-        
     print('done labeling')    
-    print('Down:',true_targets[:][0].mean())
-    print('Neutral:',true_targets[:][1].mean())
-    print('Up:',true_targets[:][2].mean())
+    print('Down:',targets_array[:,0].mean())
+    print('Neutral:',targets_array[:,1].mean())
+    print('Up:',targets_array[:, 2].mean())
     
     
     """
@@ -102,83 +100,86 @@ if __name__ == '__main__':
     print(df['label'].value_counts()) """
 
     val_point = int(len(df) * 2 / 3)
-    test_point = val_point + 350000
+    #test_point = val_point + 350000
+    test_point = val_point + 800
+    X_train = df[:val_point].drop('targets',axis=1)
+    y_train = df.loc[:val_point, 'targets']
+    X_val = df[val_point:test_point].drop('targets',axis=1)
+    y_val =  df.loc[val_point:test_point, 'targets']
+    X_test = df[test_point:].drop('targets',axis=1)
+    y_test = df.loc[test_point:, 'targets']
     
-    df_train = df[:val_point]
-    df_val = df[val_point:test_point]
-    df_test = df[test_point:]
-    
-    df_train.reset_index(inplace = True, drop =True)
-    df_val.reset_index(inplace = True, drop =True)
-    df_test.reset_index(inplace = True, drop =True)
+    X_train.reset_index(inplace = True, drop =True)
+    y_train.reset_index(inplace = True, drop =True)
+    X_val.reset_index(inplace = True, drop =True)
+    y_val.reset_index(inplace = True, drop =True)
+    X_test.reset_index(inplace = True, drop =True)
+    y_test.reset_index(inplace = True, drop =True)
     
     # Scale the data (Not neccessary if we do it with pct change)
     
     scaler = StandardScaler()
-    scaler.fit(df_train)
-    df_train_scaled = pd.DataFrame(scaler.transform(df_train))
-    df_val_scaled = pd.DataFrame(scaler.transform(df_val))
-    df_test_scaled = pd.DataFrame(scaler.transform(df_test))
+    scaler.fit(X_train)
+    X_train_scaled = pd.DataFrame(scaler.transform(X_train))
+    X_val_scaled = pd.DataFrame(scaler.transform(X_val))
+    X_test_scaled = pd.DataFrame(scaler.transform(X_test))
     print('Done Scaling')
     
 
-    print('index reseted')
-    print('train shape',df_train_scaled.shape)
-    print('val shape',df_val_scaled.shape)
-    print('test shape',df_val_scaled.shape)
+    print('train shape',X_train_scaled.shape)
+    print('val shape',X_val_scaled.shape)
+    print('test shape',X_test_scaled.shape)
     print('Starting to splitting data into timeseries')
           
     # Train Data
-    X_train = []
-    y_train = []
-    for t in range(0,len(df_train) - window_size, 1): 
-        X_train.append(df_train_scaled.iloc[t:t+window_size, :n_dim])
-        y_train.append(list(df_train.loc[t+window_size,['target']]))
+    X_train_series = []
+    y_train_series = []
+    for t in range(0,len(X_train) - window_size, 1): 
+        X_train_series.append(X_train_scaled.iloc[t:t+window_size, :n_dim])
+        y_train_series.append(np.array(y_train[t+window_size]))
 
+    np.array(y_train_series)
     N = len(X_train) #Number of total series sized T
 
-    X_train = np.array(X_train).reshape(N,window_size,n_dim)
-    y_train = np.array(y_train).reshape(-1,3)
-    print('X_train shape:', X_train.shape, 'y_train shape:', y_train.shape)
-    target_means = np.mean(y_train, axis=0)
-    print('Training Target distribution:', y_train[:,0].mean(), y_train[:,1].mean(), y_train[:,2].mean())
+    X_train_series = np.array(X_train_series).reshape(-1,window_size,n_dim)
+    y_train_series = np.array(y_train_series).reshape(-1,3)
+    print('X_train shape:', X_train_series.shape, 'y_train shape:', y_train.shape)
+    target_means_train = np.mean(y_train_series, axis=0)
+    print('Training Target distribution:', target_means_train)
     
     
     # Validation data
-    X_val = []
-    y_val = []
-    for t in range(0, len(df_val) - window_size, 1):
-        X_val.append(df_val_scaled.iloc[t:t + window_size, :n_dim])
-        y_val.append(list(df_val.loc[t+window_size,['target']]))
-    
-    N_val = len(X_val)  # Number of total series sized T for validation
-    
-    X_val = np.array(X_val).reshape(N_val, window_size, n_dim)
-    y_val = np.array(y_val).reshape(-1,3)
-    
-    print('X_val shape:', X_val.shape, 'y_val shape:', y_val.shape)
-    target_means = np.mean(y_val, axis=0)
-    print('Val Target distribution:', y_val[:,0].mean(), y_val[:,1].mean(), y_val[:,2].mean())
+    X_val_series = []
+    y_val_series = []
+    for t in range(0,len(X_val) - window_size, 1): 
+        X_val_series.append(X_val_scaled.iloc[t:t+window_size, :n_dim])
+        y_val_series.append(np.array(y_val[t+window_size]))
+
+    np.array(y_val_series)
+    N = len(X_val) #Number of total series sized T
+
+    X_val_series = np.array(X_val_series).reshape(-1,window_size,n_dim)
+    y_val_series = np.array(y_val_series).reshape(-1,3)
+    print('X_val shape:', X_val_series.shape, 'y_val shape:', y_val.shape)
+    target_means_val = np.mean(y_val_series, axis=0)
+    print('Validation Target distribution:', target_means_val)
           
     # Test data
-    X_test = []
-    y_test = []
-    for t in range(0, len(df_test) - window_size,1):
-        X_test.append(df_test_scaled.iloc[t:t + window_size, :n_dim])
-        y_test.append(list(df_test.loc[t + window_size, ['target']]))
-    
-    N_test = len(X_test)  # Number of total series sized T for test
-    
-    X_test = np.array(X_test).reshape(N_test, window_size, n_dim)
-    y_test = np.array(y_test).reshape(-1,3)
-    
-    print('X_test shape:', X_test.shape, 'y_test shape:', y_test.shape)
-    print('Test Target distribution:', y_test[:,0].mean(), y_test[:,1].mean(), y_test[:,2].mean())
-    # Create a learning rate scheduler
-    def lr_schedule(epoch, lr):
-        if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
-            lr = lr * 0.5
-        return lr
+    X_test_series = []
+    y_test_series = []
+    for t in range(0,len(X_test) - window_size, 1): 
+        X_test_series.append(X_test_scaled.iloc[t:t+window_size, :n_dim])
+        y_test_series.append(np.array(y_test[t+window_size]))
+
+    np.array(y_test_series)
+    N = len(X_test) #Number of total series sized T
+
+    X_test_series = np.array(X_test_series).reshape(-1,window_size,n_dim)
+    y_test_series = np.array(y_test_series).reshape(-1,3)
+    print('X_val shape:', X_test_series.shape, 'y_val shape:', y_test.shape)
+    target_means_test = np.mean(y_test_series, axis=0)
+    print('Validation Target distribution:', target_means_test)
+
         
     lr_scheduler = tf.keras.callbacks.LearningRateScheduler(lr_schedule)
     
@@ -194,12 +195,12 @@ if __name__ == '__main__':
             beta_2=0.999,
             name="Adam",
         ),
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(),
+        loss=tf.keras.losses.KLDivergence(),
         metrics=[tf.keras.metrics.SparseCategoricalAccuracy()],
     )
 
     # Fit the model
-    r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), callbacks=[lr_scheduler] , class_weight=class_weights)
+    r = model.fit(X_train_series, y_test_series, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), callbacks=[lr_scheduler] , class_weight=class_weights)
     """
     # Finally test the model on test data
     predictions = model.predict(X_test)
@@ -220,4 +221,4 @@ if __name__ == '__main__':
     print(f'Multiclass ROC AUC: {roc_auc:.4f}')"""
     
     # Save the model
-    model.save('/content/drive/My Drive/my_model.h5')
+    model.save(f'/content/drive/My Drive/{model_name}.h5')
