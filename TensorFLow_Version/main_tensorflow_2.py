@@ -88,7 +88,7 @@ if __name__ == '__main__':
         
     print('done labeling')    
     print('Down:',true_targets[:][0].mean())
-    print('Neutral:,'true_targets[:][1].mean())
+    print('Neutral:',true_targets[:][1].mean())
     print('Up:',true_targets[:][2].mean())
     
     
