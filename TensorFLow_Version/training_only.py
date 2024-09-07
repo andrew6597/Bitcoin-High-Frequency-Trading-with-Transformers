@@ -153,7 +153,7 @@ if __name__ == '__main__':
     )
   
     # Fit the model
-    r = model.fit(X_train_series, y_test_series, epochs=epochs, batch_size=batch_size, validation_data=(X_val_series, y_val_series))
+    r = model.fit(X_train_series, y_train_series, epochs=epochs, batch_size=batch_size, validation_data=(X_val_series, y_val_series))
 
     # Save the model
     model.save(f'/content/drive/My Drive/{model_name}.h5')
