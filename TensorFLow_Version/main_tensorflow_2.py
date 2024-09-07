@@ -11,6 +11,22 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import numpy as np
 
+def count_prices(df,t,k):
+    current_ask = df.loc[t,'p1_a']
+    current_bid = df.loc[t,'p1_b']
+    
+    future_asks = df.loc[t+1:t+k,'p1_a'] 
+    future_bids = df.loc[t+1:t+k,'p1_b'] 
+
+    higher_prices = (future_bids > current_ask).sum()
+    lower_prices = (future_asks < current_bid).sum()
+
+    higher_prices_per = higher_prices/k
+    lower_prices_per = lower_prices/k
+    neutral_prices_per = 1-higher_prices_per-lower_prices_per
+    
+    return np.array([lower_prices_per, neutral_prices_per, higher_prices_per])
+
 def lr_schedule(epoch, lr):
     if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
         lr = lr * 0.5
@@ -60,19 +76,35 @@ if __name__ == '__main__':
     batch_size = int(input("Please enter batch_size: "))
     print("You entered the int:", batch_size)
     
+    true_targets = []    
+    for t in range(0,len(df)):
+        if t < len(df) - k :
+            true_targets.append(count_prices(df, t, k))
+        else:
+            true_targets.append(np.array([0.16, 0.68, 0.16]))
+   
+
+    df['targets'] = true_targets
+        
+    print('done labeling')    
+    print('Down:',true_targets[:][0].mean())
+    print('Neutral:'true_targets[:][1].mean())
+    print('Up:',true_targets[:][2].mean())
+    
+    
+    """
     df['mid_price'] = (df['p1_a'] + df['p1_b']) / 2.0
     df['label'] = 1
     df['future_price'] = df['mid_price'].shift(-k)
     df.loc[df['future_price'] > df['mid_price'] * (1+a), 'label'] = 2
     df.loc[df['future_price'] < df['mid_price'] * (1-a), 'label'] = 0
     print('done labeling')
-    print(df['label'].value_counts())
+    print(df['label'].value_counts()) """
 
     val_point = int(len(df) * 2 / 3)
     test_point = val_point + 350000
     
     df_train = df[:val_point]
-    print('Training labels: ', df_train['label'].value_counts())
     df_val = df[val_point:test_point]
     df_test = df[test_point:]
     
@@ -99,44 +131,49 @@ if __name__ == '__main__':
     # Train Data
     X_train = []
     y_train = []
-    for t in range(0,len(df_train) - window_size, 2): 
+    for t in range(0,len(df_train) - window_size, 1): 
         X_train.append(df_train_scaled.iloc[t:t+window_size, :n_dim])
-        y_train.append(df_train.loc[t+window_size,'label'])
+        y_train.append(list(df_train.loc[t+window_size,['target']]))
 
     N = len(X_train) #Number of total series sized T
 
     X_train = np.array(X_train).reshape(N,window_size,n_dim)
-    y_train = np.array(y_train)
+    y_train = np.array(y_train).reshape(-1,3)
     print('X_train shape:', X_train.shape, 'y_train shape:', y_train.shape)
-    print(pd.Series(y_train).value_counts())
+    target_means = np.mean(y_train, axis=0)
+    print('Training Target distribution:', y_train[:,0].mean(), y_train[:,1].mean(), y_train[:,2].mean())
+    
     
     # Validation data
     X_val = []
     y_val = []
-    for t in range(0, len(df_val) - window_size, 2):
+    for t in range(0, len(df_val) - window_size, 1):
         X_val.append(df_val_scaled.iloc[t:t + window_size, :n_dim])
-        y_val.append(df_val.loc[t + window_size, 'label'])
+        y_val.append(list(df_val.loc[t+window_size,['target']]))
     
     N_val = len(X_val)  # Number of total series sized T for validation
     
     X_val = np.array(X_val).reshape(N_val, window_size, n_dim)
-    y_val = np.array(y_val)
+    y_val = np.array(y_val).reshape(-1,3)
+    
     print('X_val shape:', X_val.shape, 'y_val shape:', y_val.shape)
-    print(pd.Series(y_val).value_counts())
+    target_means = np.mean(y_val, axis=0)
+    print('Val Target distribution:', y_val[:,0].mean(), y_val[:,1].mean(), y_val[:,2].mean())
           
     # Test data
     X_test = []
     y_test = []
-    for t in range(0, len(df_test) - window_size,2):
+    for t in range(0, len(df_test) - window_size,1):
         X_test.append(df_test_scaled.iloc[t:t + window_size, :n_dim])
-        y_test.append(df_test.loc[t + window_size, 'label'])
+        y_test.append(list(df_test.loc[t + window_size, ['target']]))
     
     N_test = len(X_test)  # Number of total series sized T for test
     
     X_test = np.array(X_test).reshape(N_test, window_size, n_dim)
-    y_test = np.array(y_test)
+    y_test = np.array(y_test).reshape(-1,3)
+    
     print('X_test shape:', X_test.shape, 'y_test shape:', y_test.shape)
-    print(pd.Series(y_test).value_counts())
+    print('Test Target distribution:', y_test[:,0].mean(), y_test[:,1].mean(), y_test[:,2].mean())
     # Create a learning rate scheduler
     def lr_schedule(epoch, lr):
         if epoch % 2 == 0 and epoch != 0:  # Check if epoch is multiple of 2 and not the initial epoch
@@ -163,7 +200,7 @@ if __name__ == '__main__':
 
     # Fit the model
     r = model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, validation_data=(X_val, y_val), callbacks=[lr_scheduler] , class_weight=class_weights)
-
+    """
     # Finally test the model on test data
     predictions = model.predict(X_test)
     predicted_classes = np.argmax(predictions, axis=1)
@@ -180,7 +217,7 @@ if __name__ == '__main__':
     print(cm)
 
     roc_auc = roc_auc_score(true_classes, predictions, multi_class='ovr')
-    print(f'Multiclass ROC AUC: {roc_auc:.4f}')
+    print(f'Multiclass ROC AUC: {roc_auc:.4f}')"""
     
     # Save the model
     model.save('/content/drive/My Drive/my_model.h5')
