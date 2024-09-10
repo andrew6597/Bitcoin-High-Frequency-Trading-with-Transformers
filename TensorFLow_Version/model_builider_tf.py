@@ -51,7 +51,7 @@ def TransLOB(window_size,n_dim):
     x = Dropout(0.1)(x)
 
     # Output
-    out = Dense(3, activation='softmax')(x)
+    out = Dense(1, activation='tanh')(x)
 
     mdl = Model(inputs=i, outputs=out)
     print(mdl.summary())
